@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SessionType {
+  conversation
+  reading
+  review
+}
+
+enum UtteranceRole {
+  learner
+  coach
+  system
+}
+
+enum MistakeCategory {
+  grammar
+  vocabulary
+  pronunciation
+  fluency
+  syntax
+  word_choice
+  reading_accuracy
+}
+
+enum PtBrSupportLevel {
+  high
+  medium
+  low
+  minimal
+}
+
+enum CorrectionIntensity {
+  light
+  balanced
+  high
+}
+
+model LearnerProfile {
+  id                       String   @id @default(cuid())
+  displayName              String?
+  levelEstimate            String?
+  speakingConfidence       Float    @default(0.3)
+  readingConfidence        Float    @default(0.3)
+  ptBrSupportLevel         PtBrSupportLevel @default(medium)
+  correctionIntensity      CorrectionIntensity @default(balanced)
+  preferredInteractionStyle String?
+  currentFocus             String?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  sessions                 LearningSession[]
+  snapshots                LearnerSnapshot[]
+  skills                   SkillMastery[]
+  preferences              Preferences?
+}
+
+model LearningSession {
+  id               String   @id @default(cuid())
+  learnerProfileId String
+  sessionType      SessionType
+  title            String?
+  startedAt        DateTime @default(now())
+  endedAt          DateTime?
+  learnerProfile   LearnerProfile @relation(fields: [learnerProfileId], references: [id])
+  utterances       Utterance[]
+}
+
+model Utterance {
+  id                      String   @id @default(cuid())
+  learningSessionId       String
+  role                    UtteranceRole
+  transcript              String
+  languageCode            String?
+  provider                String?
+  durationMs              Int?
+  transcriptionConfidence Float?
+  createdAt               DateTime @default(now())
+  session                 LearningSession @relation(fields: [learningSessionId], references: [id])
+}
+
+model Mistake {
+  id               String   @id @default(cuid())
+  learnerProfileId String
+  category         MistakeCategory
+  sourceText       String
+  correctedText    String?
+  explanation      String?
+  createdAt        DateTime @default(now())
+}
+
+model SkillMastery {
+  id               String   @id @default(cuid())
+  learnerProfileId String
+  skillName        String
+  score            Float
+  updatedAt        DateTime @updatedAt
+  learnerProfile   LearnerProfile @relation(fields: [learnerProfileId], references: [id])
+}
+
+model VocabularyItem {
+  id               String   @id @default(cuid())
+  learnerProfileId String
+  term             String
+  notes            String?
+  createdAt        DateTime @default(now())
+}
+
+model PronunciationTarget {
+  id               String   @id @default(cuid())
+  learnerProfileId String
+  target           String
+  notes            String?
+  createdAt        DateTime @default(now())
+}
+
+model LearnerSnapshot {
+  id               String   @id @default(cuid())
+  learnerProfileId String
+  summary          String
+  createdAt        DateTime @default(now())
+  learnerProfile   LearnerProfile @relation(fields: [learnerProfileId], references: [id])
+}
+
+model ReviewQueueItem {
+  id               String   @id @default(cuid())
+  learnerProfileId String
+  itemType         String
+  prompt           String
+  priority         Int      @default(50)
+  isCompleted      Boolean  @default(false)
+  createdAt        DateTime @default(now())
+}
+
+model Preferences {
+  id                  String   @id @default(cuid())
+  learnerProfileId    String   @unique
+  ptBrSupportLevel    PtBrSupportLevel @default(medium)
+  correctionIntensity CorrectionIntensity @default(balanced)
+  learningGoal        String?
+  currentFocus        String?
+  learnerProfile      LearnerProfile @relation(fields: [learnerProfileId], references: [id])
+}

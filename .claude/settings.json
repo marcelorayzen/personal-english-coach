@@ -1,0 +1,13 @@
+﻿{
+  "mcpServers": {
+    "rayzen": {
+      "command": "node",
+      "args": ["C:\\Users\\marce\\Desktop\\Projects\\rayzen-ai\\apps\\agent\\dist\\mcp-server.js"],
+      "env": {
+        "AGENT_API_URL": "http://20.251.146.221:3101",
+        "AGENT_TOKEN": "65a4cabca99c38c59478631873b22d308fe7e19137ef20f1",
+        "PROJECT_ID": "f25ed5cb-0527-4bc6-bd34-7a41750fa78d"
+      }
+    }
+  }
+}

@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: personal_english_coach
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '${PEC_DB_PORT:-5433}:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d personal_english_coach']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - pec_postgres_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ../../
+      dockerfile: apps/api/Dockerfile
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/personal_english_coach
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - '${PEC_API_PORT:-3001}:3001'
+
+  web:
+    build:
+      context: ../../
+      dockerfile: apps/web/Dockerfile
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:${PEC_API_PORT:-3001}/api
+      API_BASE_URL_INTERNAL: http://api:3001/api
+    depends_on:
+      - api
+    ports:
+      - '${PEC_WEB_PORT:-3000}:3000'
+
+  migrate:
+    build:
+      context: ../../
+      dockerfile: apps/api/Dockerfile
+    command:
+      ['pnpm', '--filter', '@personal-english-coach/api', 'prisma:migrate:deploy']
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/personal_english_coach
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles: ['tools']
+
+volumes:
+  pec_postgres_data:
